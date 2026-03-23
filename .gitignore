@@ -1,0 +1,75 @@
+# ========================
+# Environment Variables
+# ========================
+.env
+.env.local
+.env.production
+
+# ========================
+# Dependencies
+# ========================
+node_modules/
+
+# ========================
+# Python
+# ========================
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# ========================
+# AI Models (too large for GitHub)
+# ========================
+ai-server/models/*.h5
+ai-server/models/*.pkl
+ai-server/models/*.pt
+ai-server/models/*.pth
+ai-server/models/*.onnx
+
+# ========================
+# Datasets
+# ========================
+datasets/
+notebooks/data/
+notebooks/output/
+
+# ========================
+# Build Output
+# ========================
+frontend/dist/
+
+# ========================
+# Logs
+# ========================
+backend-node/logs/
+*.log
+
+# ========================
+# OS Files
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# IDE / Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# Misc
+# ========================
+*.zip
+*.tar.gz
+*.rar
