@@ -31,6 +31,12 @@ const uploadedReportSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  aiAnalysis: {
+    prediction: String,
+    confidence: Number,
+    description: String,
+    recommendations: [String],
+  }
 });
 
 uploadedReportSchema.index({ userId: 1, uploadedAt: -1 });

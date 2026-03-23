@@ -14,7 +14,7 @@ from typing import List, Optional
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from services import xray_service, mri_service, ecg_service, heart_service, diabetes_service
-from services import chatbot_service, brief_service, report_service
+from services import chatbot_service, brief_service, report_service, document_service
 
 # Track model loading status
 models_status = {
@@ -202,6 +202,23 @@ async def predict_diabetes(data: DiabetesPredictionRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Diabetes prediction error: {str(e)}")
+
+
+@app.post("/predict/document")
+async def predict_document(file: UploadFile = File(...)):
+    """Analyze a medical document using Gemini Vision."""
+    try:
+        contents = await file.read()
+        if not contents:
+            raise HTTPException(status_code=400, detail="Empty document uploaded")
+
+        mime_type = file.content_type or "application/pdf"
+        result = document_service.predict(contents, mime_type)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Document analysis error: {str(e)}")
 
 
 @app.post("/chat")

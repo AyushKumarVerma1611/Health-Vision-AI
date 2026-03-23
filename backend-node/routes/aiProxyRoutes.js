@@ -152,6 +152,101 @@ router.post('/mri', upload.single('file'), async (req, res, next) => {
   }
 });
 
+// POST /api/ai/document - Forward document to Python AI
+const fs = require('fs');
+const path = require('path');
+const UploadedReport = require('../models/UploadedReport');
+
+router.post('/document', upload.single('file'), async (req, res, next) => {
+  try {
+    let fileBuffer, originalname, mimetype;
+
+    if (req.body.reportId) {
+      const report = await UploadedReport.findOne({ _id: req.body.reportId, userId: req.user._id });
+      if (!report) return res.status(404).json({ message: 'Report not found' });
+      
+      const filePath = path.join(__dirname, '../../uploads/reports', report.cloudinaryPublicId);
+      
+      if (fs.existsSync(filePath)) {
+        fileBuffer = fs.readFileSync(filePath);
+      } else if (report.fileUrl && report.fileUrl.startsWith('http')) {
+        // Fallback to fetching from remote URL (legacy Cloudinary support)
+        try {
+          const remoteFile = await axios.get(report.fileUrl, { responseType: 'arraybuffer' });
+          fileBuffer = Buffer.from(remoteFile.data);
+        } catch (downloadErr) {
+          console.error("Failed to fetch legacy remote file:", downloadErr.message);
+          return res.status(404).json({ message: 'Legacy file could not be downloaded from remote server' });
+        }
+      } else {
+        return res.status(404).json({ message: 'File not found on disk or remote server' });
+      }
+      
+      originalname = report.fileName;
+      mimetype = report.fileType;
+    } else if (req.file) {
+      fileBuffer = req.file.buffer;
+      originalname = req.file.originalname;
+      mimetype = req.file.mimetype;
+    } else {
+      return res.status(400).json({ message: 'No file or reportId provided.' });
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileBuffer, {
+      filename: originalname,
+      contentType: mimetype,
+    });
+
+    const response = await axios.post(`${AI_URL}/predict/document`, formData, {
+      headers: formData.getHeaders(),
+      timeout: 120000, // wait up to 2 mins for heavy PDFs
+    });
+
+    const result = response.data;
+
+    const analysis = await Analysis.create({
+      userId: req.user._id,
+      type: 'document',
+      result: {
+        prediction: result.prediction,
+        confidence: result.confidence,
+        details: {
+          description: result.description,
+          recommendation: result.recommendations.join('\n') || '',
+          raw_recommendations: result.recommendations, // store array for PDF generation
+        },
+      },
+    });
+
+    // Automatically upgrade legacy reports by saving the newly generated analysis back to the report doc
+    if (req.body.reportId) {
+      await UploadedReport.findByIdAndUpdate(req.body.reportId, {
+        aiAnalysis: {
+          prediction: result.prediction,
+          confidence: result.confidence,
+          description: result.description,
+          recommendations: result.recommendations || []
+        }
+      });
+    }
+
+    res.json({ ...result, analysisId: analysis._id });
+  } catch (error) {
+    if (error.response) {
+      const detail = error.response.data?.detail || '';
+      const isQuota = typeof detail === 'string' && (detail.includes('Quota Exceeded') || detail.includes('quota') || detail.includes('429'));
+      const status = isQuota ? 429 : 502;
+      const message = isQuota ? 'Google API Quota Exceeded. Please wait a minute before trying again.' : (typeof detail === 'string' ? detail : 'AI server error.');
+      return res.status(status).json({ message, details: error.response.data });
+    }
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ message: 'AI server is not available.' });
+    }
+    next(error);
+  }
+});
+
 // POST /api/ai/heart - Forward heart data to Python AI
 router.post('/heart', async (req, res, next) => {
   try {

@@ -90,6 +90,8 @@ def generate_pdf(report_data: dict) -> str:
 
         elements = []
 
+        import html
+
         # Header
         elements.append(Paragraph("🏥 HealthVision AI", title_style))
         elements.append(Paragraph("AI-Powered Health Analysis Report", subtitle_style))
@@ -97,8 +99,8 @@ def generate_pdf(report_data: dict) -> str:
         elements.append(Spacer(1, 20))
 
         # Patient & Report Info
-        patient_name = report_data.get("patient_name", "Patient")
-        analysis_type = report_data.get("analysis_type", "General").upper()
+        patient_name = html.escape(str(report_data.get("patient_name", "Patient")))
+        analysis_type = html.escape(str(report_data.get("analysis_type", "General")).upper())
         date_str = datetime.now().strftime("%B %d, %Y at %I:%M %p")
 
         info_data = [
@@ -123,13 +125,14 @@ def generate_pdf(report_data: dict) -> str:
         # Results Section
         elements.append(Paragraph("Analysis Results", heading_style))
 
-        prediction = report_data.get("prediction", "N/A")
+        prediction = html.escape(str(report_data.get("prediction", "N/A")))
         confidence = report_data.get("confidence", 0)
         risk_pct = report_data.get("risk_percentage")
         risk_level = report_data.get("risk_level")
 
         if risk_pct is not None:
-            elements.append(Paragraph(f"<b>Risk Level:</b> {risk_level}", body_style))
+            safe_risk = html.escape(str(risk_level))
+            elements.append(Paragraph(f"<b>Risk Level:</b> {safe_risk}", body_style))
             elements.append(Paragraph(f"<b>Risk Percentage:</b> {risk_pct}%", body_style))
         else:
             elements.append(Paragraph(f"<b>Prediction:</b> {prediction}", body_style))
@@ -140,8 +143,9 @@ def generate_pdf(report_data: dict) -> str:
         # Description
         description = report_data.get("description", "")
         if description:
+            safe_desc = html.escape(str(description))
             elements.append(Paragraph("Detailed Findings", heading_style))
-            elements.append(Paragraph(description, body_style))
+            elements.append(Paragraph(safe_desc, body_style))
             elements.append(Spacer(1, 12))
 
         # Recommendations
@@ -151,9 +155,11 @@ def generate_pdf(report_data: dict) -> str:
         if recommendation or recommendations_list:
             elements.append(Paragraph("Recommendations", heading_style))
             if recommendation:
-                elements.append(Paragraph(recommendation, body_style))
+                safe_rec = html.escape(str(recommendation))
+                elements.append(Paragraph(safe_rec, body_style))
             for rec in recommendations_list:
-                elements.append(Paragraph(f"• {rec}", body_style))
+                safe_item = html.escape(str(rec))
+                elements.append(Paragraph(f"• {safe_item}", body_style))
             elements.append(Spacer(1, 12))
 
         # Disclaimer

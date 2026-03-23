@@ -39,3 +39,17 @@ export const downloadPDF = async (analysisData) => {
   const response = await api.post('/api/ai/report', analysisData, { timeout: 30000 });
   return response.data;
 };
+
+export const analyzeDocument = async (data) => {
+  const formData = new FormData();
+  if (data.reportId) {
+    formData.append('reportId', data.reportId);
+  } else if (data.file) {
+    formData.append('file', data.file);
+  }
+  const response = await api.post('/api/ai/document', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
+  });
+  return response.data;
+};

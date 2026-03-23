@@ -13,6 +13,7 @@ const analysisRoutes = require('./routes/analysisRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const briefRoutes = require('./routes/briefRoutes');
 const aiProxyRoutes = require('./routes/aiProxyRoutes');
+const path = require('path');
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use(cors({
     : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   credentials: true,
 }));
+
+// Serve static files from uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Body parsing
 app.use(express.json({ limit: '50mb' }));

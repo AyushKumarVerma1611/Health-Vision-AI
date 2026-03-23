@@ -1,5 +1,10 @@
-const cloudinary = require('../config/cloudinary');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 const UploadedReport = require('../models/UploadedReport');
+
+const AI_URL = process.env.PYTHON_AI_URL || 'http://localhost:8000';
 
 const uploadReport = async (req, res, next) => {
   try {
@@ -8,23 +13,50 @@ const uploadReport = async (req, res, next) => {
     }
 
     const { description } = req.body;
+    
+    // Save to local disk instead of Cloudinary
+    const ext = path.extname(req.file.originalname) || '.pdf';
+    const filename = `${req.user._id}_${Date.now()}${ext}`;
+    const filePath = path.join(__dirname, '../uploads/reports', filename);
+    
+    // Ensure dir exists
+    fs.mkdirSync(path.join(__dirname, '../uploads/reports'), { recursive: true });
+    fs.writeFileSync(filePath, req.file.buffer);
 
-    const b64 = Buffer.from(req.file.buffer).toString('base64');
-    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/reports/${filename}`;
 
-    const uploadResult = await cloudinary.uploader.upload(dataURI, {
-      folder: 'healthvision/reports',
-      resource_type: 'auto',
-      public_id: `${req.user._id}_${Date.now()}`,
-    });
+    // --- INSTANT AI ANALYSIS ---
+    let aiData = null;
+    try {
+      const formData = new FormData();
+      formData.append('file', req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+      });
+
+      const response = await axios.post(`${AI_URL}/predict/document`, formData, {
+        headers: formData.getHeaders(),
+        timeout: 120000, 
+      });
+      aiData = response.data;
+    } catch (aiErr) {
+      console.error('Failed to auto-analyze document:', aiErr.message);
+      // We don't fail the upload just because AI analysis failed, but we log it.
+    }
 
     const report = await UploadedReport.create({
       userId: req.user._id,
       fileName: req.file.originalname,
-      fileUrl: uploadResult.secure_url,
+      fileUrl: fileUrl,
       fileType: req.file.mimetype,
       description: description || '',
-      cloudinaryPublicId: uploadResult.public_id,
+      cloudinaryPublicId: filename, // store local filename here
+      aiAnalysis: aiData ? {
+        prediction: aiData.prediction,
+        confidence: aiData.confidence,
+        description: aiData.description,
+        recommendations: aiData.recommendations || []
+      } : null
     });
 
     res.status(201).json({ report });
@@ -57,9 +89,12 @@ const deleteReport = async (req, res, next) => {
     }
 
     try {
-      await cloudinary.uploader.destroy(report.cloudinaryPublicId);
-    } catch (cloudErr) {
-      console.error('Cloudinary delete error:', cloudErr.message);
+      const filePath = path.join(__dirname, '../uploads/reports', report.cloudinaryPublicId);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (fsErr) {
+      console.error('File delete error:', fsErr.message);
     }
 
     await UploadedReport.findByIdAndDelete(report._id);
