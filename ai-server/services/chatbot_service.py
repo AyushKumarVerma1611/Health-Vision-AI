@@ -44,7 +44,7 @@ def chat(message: str, history: list = None) -> str:
         return "⚠️ **AI Chat Unavailable**: The Gemini API is not configured. Please set the GEMINI_API_KEY environment variable to enable the AI health assistant."
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         conversation_parts = [SYSTEM_PROMPT + "\n\n"]
 
@@ -72,7 +72,7 @@ def chat(message: str, history: list = None) -> str:
 def _handle_error(error_message: str) -> str:
     """Return a friendly error message."""
     if "quota" in error_message.lower() or "rate" in error_message.lower():
-        return "I'm experiencing high demand right now. Please try again in a moment. If symptoms are urgent, please contact your healthcare provider directly."
+        return f"⚠️ **Google API Quota Exceeded**: {error_message}\n\nPlease check your Google Cloud Console to verify your active quota or billing details for this API key."
 
-    return "I apologize, but I encountered an issue processing your request. Please try again. If you need immediate medical assistance, please contact your healthcare provider or call emergency services."
+    return f"⚠️ **API Error**: {error_message}\n\nPlease try again or verify your GEMINI_API_KEY."
 

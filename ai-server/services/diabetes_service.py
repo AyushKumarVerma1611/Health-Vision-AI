@@ -61,7 +61,7 @@ def predict(data: dict) -> dict:
         return {
             "risk_percentage": risk_percentage,
             "risk_level": risk_level,
-            "confidence": round(float(max(probabilities)) * 100, 2),
+            "confidence": float(max(probabilities)),
             "recommendations": _get_recommendations(risk_level, data),
         }
     except Exception as e:

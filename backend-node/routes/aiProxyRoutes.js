@@ -275,7 +275,12 @@ router.post('/chat', async (req, res, next) => {
 // POST /api/ai/report - Generate PDF report
 router.post('/report', async (req, res, next) => {
   try {
-    const response = await axios.post(`${AI_URL}/generate-pdf`, req.body, {
+    const payload = {
+      ...req.body,
+      patient_name: req.user?.name || 'Patient',
+    };
+    
+    const response = await axios.post(`${AI_URL}/generate-pdf`, payload, {
       timeout: 30000,
     });
 

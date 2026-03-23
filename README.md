@@ -28,38 +28,59 @@ healthvision-ai/
 └── notebooks/          # Jupyter notebooks for model training
 ```
 
-## Setup
+## Setup Instructions (Single Source of Truth)
 
 ### Prerequisites
 - Python 3.10+
 - Node.js 18+
-- MongoDB Atlas account
+- MongoDB Atlas account (or local MongoDB)
 - Google Gemini API key
 - Cloudinary account
 
-### 1. AI Server
+### 1. AI Server Setup (Python)
+First, create a virtual environment in the root folder, then install details:
 ```bash
+# From the root of the project:
+python -m venv .venv
+
+# Activate the virtual environment
+.venv\Scripts\activate       # Windows
+source .venv/bin/activate    # Mac/Linux
+
+# Install all AI dependencies
 cd ai-server
-python -m venv venv
-venv\Scripts\activate        # Windows
 pip install -r requirements.txt
-cp .env.example .env         # Add your GEMINI_API_KEY
+
+# Configure environment variables
+cp .env.example .env         # Add your GEMINI_API_KEY inside the .env file
+
+# Start the server
 python main.py               # Starts on port 8000
 ```
 
-### 2. Backend
+### 2. Backend Setup (Node.js)
+Open a new terminal and navigate to the backend-node directory:
 ```bash
 cd backend-node
 npm install
+
+# Configure environment variables
 cp .env.example .env         # Add your MongoDB URI, JWT secret, Cloudinary keys
-node server.js               # Starts on port 5000
+
+# Start the Node.js API server
+npm run dev                  # Starts on port 5000
 ```
 
-### 3. Frontend
+### 3. Frontend Setup (React)
+Open a third terminal and navigate to the frontend directory:
 ```bash
 cd frontend
 npm install
-cp .env.example .env         # Set VITE_API_URL if needed
+
+# Configure environment variables
+cp .env.example .env         # Ensure VITE_API_URL is set if using a different port
+
+# Start the React app
 npm run dev                  # Starts on port 5173
 ```
 

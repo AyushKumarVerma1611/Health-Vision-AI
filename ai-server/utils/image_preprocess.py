@@ -19,7 +19,7 @@ def preprocess_image(image_bytes: bytes, target_size: tuple = (224, 224)) -> np.
     """
     img = decode_image(image_bytes)
     img = img.resize(target_size, Image.Resampling.LANCZOS)
-    img_array = np.array(img, dtype=np.float32) / 255.0
+    img_array = np.array(img, dtype=np.float32)
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 

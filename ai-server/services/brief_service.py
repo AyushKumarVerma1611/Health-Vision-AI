@@ -60,7 +60,7 @@ Be concise, clinical, and factual. Never invent conditions not present in the da
         return "⚠️ AI Brief Generation Unavailable: The Gemini API is not configured. Please set the GEMINI_API_KEY environment variable to enable AI-powered brief generation."
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
 
         if response and response.text:

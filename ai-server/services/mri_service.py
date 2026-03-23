@@ -57,6 +57,28 @@ def predict(image_bytes: bytes) -> dict:
         raise RuntimeError("MRI model is not loaded. Please ensure the model file exists in the models/ directory and TensorFlow is installed.")
 
     try:
+        # Check if it's actually an MRI using Gemini (OOD Detection)
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            try:
+                import google.generativeai as genai
+                from PIL import Image
+                import io
+                genai.configure(api_key=api_key)
+                img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+                model = genai.GenerativeModel("gemini-2.5-flash")
+                response = model.generate_content(["Is this an image of a Brain MRI scan? Reply EXACTLY with YES or NO.", img])
+                if "NO" in response.text.upper():
+                    return {
+                        "prediction": "Unknown",
+                        "confidence": 0.0,
+                        "description": "The uploaded image does not appear to be a Brain MRI scan. Please upload a clear MRI image.",
+                        "recommendation": "Ensure you are uploading the correct medical image type.",
+                        "heatmap_base64": "",
+                    }
+            except Exception as e:
+                print(f"[MRI Service] Gemini validation failed, proceeding to CNN: {e}")
+
         img_array = preprocess_image(image_bytes, target_size=(224, 224))
         predictions = _model.predict(img_array, verbose=0)
         predicted_idx = int(np.argmax(predictions[0]))
@@ -71,7 +93,7 @@ def predict(image_bytes: bytes) -> dict:
 
         return {
             "prediction": prediction_class,
-            "confidence": round(confidence * 100, 2),
+            "confidence": float(confidence),
             "description": DESCRIPTIONS.get(prediction_class, "Unknown condition detected."),
             "recommendation": RECOMMENDATIONS.get(prediction_class, ""),
             "heatmap_base64": heatmap_b64,
