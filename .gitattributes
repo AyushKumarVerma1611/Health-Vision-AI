@@ -1,0 +1,2 @@
+ai-server/models/*.h5 filter=lfs diff=lfs merge=lfs -text
+ai-server/models/*.pkl filter=lfs diff=lfs merge=lfs -text

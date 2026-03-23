@@ -24,14 +24,7 @@ __pycache__/
 dist/
 build/
 
-# ========================
-# AI Models (too large for GitHub)
-# ========================
-ai-server/models/*.h5
-ai-server/models/*.pkl
-ai-server/models/*.pt
-ai-server/models/*.pth
-ai-server/models/*.onnx
+
 
 # ========================
 # Datasets
